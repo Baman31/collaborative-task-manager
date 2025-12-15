@@ -57,12 +57,17 @@ cd frontend && npm run dev
 ```
 
 ## Key Features
-- User authentication (register/login)
-- Task CRUD with assignments
+- User authentication (register/login) with secure HttpOnly JWT cookies
+- Task CRUD with role-based authorization (creator/assignee only)
 - Real-time updates via Socket.io
 - Priority and status filtering
 - Dashboard with statistics
 - Responsive design
+
+## Security
+- CORS whitelist configuration for trusted origins
+- User-scoped task queries (users only see their own tasks)
+- Authorization checks on all task operations
 
 ## Database
 PostgreSQL with Prisma ORM. Tables: User, Task
