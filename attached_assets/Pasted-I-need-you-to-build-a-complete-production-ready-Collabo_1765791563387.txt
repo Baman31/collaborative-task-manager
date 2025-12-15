@@ -1,0 +1,670 @@
+I need you to build a complete, production-ready Collaborative Task Manager application with the following specifications. This is a full-stack TypeScript project that must be deployed and fully functional.
+
+## PROJECT STRUCTURE
+
+Create a monorepo with the following structure:
+collaborative-task-manager/
+├── backend/
+│   ├── src/
+│   │   ├── server.ts
+│   │   ├── controllers/
+│   │   │   ├── authController.ts
+│   │   │   ├── taskController.ts
+│   │   │   └── userController.ts
+│   │   ├── services/
+│   │   │   ├── authService.ts
+│   │   │   ├── taskService.ts
+│   │   │   └── userService.ts
+│   │   ├── repositories/
+│   │   │   ├── userRepository.ts
+│   │   │   └── taskRepository.ts
+│   │   ├── middleware/
+│   │   │   ├── authMiddleware.ts
+│   │   │   ├── errorMiddleware.ts
+│   │   │   └── validationMiddleware.ts
+│   │   ├── dtos/
+│   │   │   ├── authDto.ts
+│   │   │   ├── taskDto.ts
+│   │   │   └── userDto.ts
+│   │   ├── types/
+│   │   │   └── index.ts
+│   │   ├── config/
+│   │   │   ├── database.ts
+│   │   │   └── jwt.ts
+│   │   └── socket/
+│   │       └── socketHandler.ts
+│   ├── prisma/
+│   │   └── schema.prisma
+│   ├── tests/
+│   │   └── taskService.test.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── .env.example
+├── frontend/
+│   ├── src/
+│   │   ├── main.tsx
+│   │   ├── App.tsx
+│   │   ├── components/
+│   │   │   ├── auth/
+│   │   │   │   ├── LoginForm.tsx
+│   │   │   │   └── RegisterForm.tsx
+│   │   │   ├── tasks/
+│   │   │   │   ├── TaskList.tsx
+│   │   │   │   ├── TaskCard.tsx
+│   │   │   │   ├── TaskForm.tsx
+│   │   │   │   └── TaskFilters.tsx
+│   │   │   ├── layout/
+│   │   │   │   ├── Header.tsx
+│   │   │   │   └── Layout.tsx
+│   │   │   └── ui/
+│   │   │       ├── Button.tsx
+│   │   │       ├── Input.tsx
+│   │   │       ├── Modal.tsx
+│   │   │       ├── SkeletonLoader.tsx
+│   │   │       └── Toast.tsx
+│   │   ├── pages/
+│   │   │   ├── LoginPage.tsx
+│   │   │   ├── RegisterPage.tsx
+│   │   │   ├── DashboardPage.tsx
+│   │   │   ├── TasksPage.tsx
+│   │   │   └── ProfilePage.tsx
+│   │   ├── hooks/
+│   │   │   ├── useAuth.ts
+│   │   │   ├── useTasks.ts
+│   │   │   ├── useSocket.ts
+│   │   │   └── useToast.ts
+│   │   ├── services/
+│   │   │   ├── api.ts
+│   │   │   └── socket.ts
+│   │   ├── context/
+│   │   │   ├── AuthContext.tsx
+│   │   │   └── SocketContext.tsx
+│   │   ├── types/
+│   │   │   └── index.ts
+│   │   └── utils/
+│   │       └── helpers.ts
+│   ├── index.html
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── vite.config.ts
+│   └── tailwind.config.js
+├── README.md
+├── .gitignore
+└── docker-compose.yml (optional)
+
+## BACKEND IMPLEMENTATION
+
+### 1. DATABASE SCHEMA (prisma/schema.prisma)
+
+Create a PostgreSQL database schema with:
+- User model: id (uuid), email (unique), password (hashed), name, createdAt, updatedAt
+- Task model: id (uuid), title (max 100 chars), description, dueDate, priority (enum: LOW, MEDIUM, HIGH, URGENT), status (enum: TODO, IN_PROGRESS, REVIEW, COMPLETED), creatorId, assignedToId, createdAt, updatedAt
+- Relations: User has many createdTasks and assignedTasks
+
+### 2. BACKEND DEPENDENCIES
+
+Install these packages in backend/:
+```json
+{
+  "dependencies": {
+    "express": "^4.18.2",
+    "typescript": "^5.3.0",
+    "@types/express": "^4.17.20",
+    "@prisma/client": "^5.7.0",
+    "prisma": "^5.7.0",
+    "bcrypt": "^5.1.1",
+    "@types/bcrypt": "^5.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "@types/jsonwebtoken": "^9.0.5",
+    "zod": "^3.22.4",
+    "socket.io": "^4.6.0",
+    "cors": "^2.8.5",
+    "@types/cors": "^2.8.16",
+    "cookie-parser": "^1.4.6",
+    "@types/cookie-parser": "^1.4.6",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.10",
+    "ts-jest": "^29.1.1"
+  }
+}
+```
+
+### 3. AUTHENTICATION IMPLEMENTATION
+
+authService.ts must include:
+- register(email, name, password): Hash password with bcrypt (10 rounds), create user, return user without password
+- login(email, password): Verify credentials, generate JWT token (7 days expiry), return user and token
+- validateToken(token): Verify JWT and return user payload
+
+authController.ts must handle:
+- POST /api/auth/register - Validate with Zod, call authService.register
+- POST /api/auth/login - Validate, call authService.login, set HttpOnly cookie
+- GET /api/auth/me - Return current authenticated user
+- POST /api/auth/logout - Clear cookie
+
+authMiddleware.ts:
+- Extract JWT from cookies
+- Verify token and attach user to req.user
+- Return 401 if invalid/missing
+
+### 4. TASK CRUD IMPLEMENTATION
+
+taskService.ts must implement:
+- createTask(data, userId): Validate DTO, create task with creatorId
+- getTasks(filters, userId): Support filtering by status, priority, assignedTo, creator
+- getTaskById(id, userId): Get single task with authorization check
+- updateTask(id, data, userId): Update task, emit Socket.io event, check permissions
+- deleteTask(id, userId): Soft or hard delete, check permissions
+- getMyAssignedTasks(userId): Filter tasks where assignedToId = userId
+- getMyCreatedTasks(userId): Filter tasks where creatorId = userId
+- getOverdueTasks(userId): Filter tasks where dueDate < now and status != COMPLETED
+
+taskController.ts must handle:
+- GET /api/tasks - Query params: status, priority, sortBy, order
+- POST /api/tasks - Create with validation
+- GET /api/tasks/:id - Single task
+- PATCH /api/tasks/:id - Update task
+- DELETE /api/tasks/:id - Delete task
+
+### 5. DTOs WITH ZOD VALIDATION
+
+createTaskDto.ts:
+```typescript
+export const createTaskDto = z.object({
+  title: z.string().min(1).max(100),
+  description: z.string(),
+  dueDate: z.string().datetime(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+  assignedToId: z.string().uuid().optional()
+});
+```
+
+updateTaskDto.ts:
+```typescript
+export const updateTaskDto = z.object({
+  title: z.string().min(1).max(100).optional(),
+  description: z.string().optional(),
+  dueDate: z.string().datetime().optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'COMPLETED']).optional(),
+  assignedToId: z.string().uuid().optional()
+});
+```
+
+registerDto.ts, loginDto.ts similar pattern.
+
+### 6. SOCKET.IO IMPLEMENTATION
+
+socketHandler.ts must:
+- Accept authenticated connections
+- Handle 'join' event to join user-specific rooms
+- Emit events:
+  - 'task:updated' - Broadcast to all connected clients when task changes
+  - 'task:created' - Broadcast new task
+  - 'task:deleted' - Broadcast deletion
+  - 'task:assigned' - Send to specific user room when task assigned
+  
+Integration: After taskService.updateTask(), emit socket event with task data
+
+server.ts setup:
+```typescript
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: process.env.FRONTEND_URL, credentials: true }
+});
+
+// Attach io to app for controllers to access
+app.set('io', io);
+
+// Socket handler
+setupSocketHandlers(io);
+
+server.listen(PORT);
+```
+
+### 7. ERROR HANDLING
+
+errorMiddleware.ts:
+- Catch all errors
+- Format response: { success: false, error: { message, code, details } }
+- Return appropriate HTTP status codes:
+  - 400 for validation errors
+  - 401 for unauthorized
+  - 403 for forbidden
+  - 404 for not found
+  - 500 for server errors
+
+### 8. TESTING
+
+tests/taskService.test.ts - Write 3 tests:
+1. Test task creation with valid data
+2. Test task creation with invalid data (should throw validation error)
+3. Test unauthorized update attempt (should throw error)
+
+Use Jest with ts-jest preset.
+
+### 9. BACKEND ENV VARIABLES
+
+.env.example:
+DATABASE_URL=postgresql://user:password@localhost:5432/taskmanager
+JWT_SECRET=your-secret-key-change-in-production
+JWT_EXPIRES_IN=7d
+PORT=5000
+FRONTEND_URL=http://localhost:5173
+NODE_ENV=development
+
+## FRONTEND IMPLEMENTATION
+
+### 1. FRONTEND DEPENDENCIES
+
+Install in frontend/:
+```json
+{
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "swr": "^2.2.4",
+    "socket.io-client": "^4.6.0",
+    "react-hook-form": "^7.48.0",
+    "zod": "^3.22.4",
+    "@hookform/resolvers": "^3.3.2",
+    "axios": "^1.6.2",
+    "date-fns": "^2.30.0",
+    "lucide-react": "^0.294.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.42",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.5",
+    "tailwindcss": "^3.3.6",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32"
+  }
+}
+```
+
+### 2. TAILWIND CSS SETUP
+
+tailwind.config.js:
+```javascript
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        primary: '#3b82f6',
+        secondary: '#8b5cf6',
+      }
+    }
+  }
+}
+```
+
+Add Tailwind directives to index.css
+
+### 3. API SERVICE
+
+services/api.ts:
+```typescript
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  withCredentials: true
+});
+
+export const authAPI = {
+  register: (data) => api.post('/auth/register', data),
+  login: (data) => api.post('/auth/login', data),
+  logout: () => api.post('/auth/logout'),
+  getMe: () => api.get('/auth/me')
+};
+
+export const taskAPI = {
+  getTasks: (params) => api.get('/tasks', { params }),
+  createTask: (data) => api.post('/tasks', data),
+  updateTask: (id, data) => api.patch(`/tasks/${id}`, data),
+  deleteTask: (id) => api.delete(`/tasks/${id}`),
+  getMyTasks: () => api.get('/users/me/tasks'),
+  getMyCreated: () => api.get('/users/me/created')
+};
+```
+
+### 4. SOCKET.IO CLIENT
+
+services/socket.ts:
+```typescript
+import io from 'socket.io-client';
+
+export const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
+  withCredentials: true,
+  autoConnect: false
+});
+```
+
+SocketContext.tsx:
+- Provide socket instance
+- Handle connection/disconnection
+- Listen for events and update SWR cache
+
+### 5. AUTH CONTEXT
+
+AuthContext.tsx:
+- Manage user state
+- Provide login/logout/register functions
+- Handle authentication state
+- Protect routes with PrivateRoute component
+
+### 6. SWR HOOKS
+
+hooks/useTasks.ts:
+```typescript
+import useSWR from 'swr';
+import { taskAPI } from '../services/api';
+
+export const useTasks = (filters = {}) => {
+  const { data, error, mutate } = useSWR(
+    ['/tasks', filters],
+    () => taskAPI.getTasks(filters).then(res => res.data),
+    { revalidateOnFocus: false }
+  );
+  
+  return {
+    tasks: data?.tasks || [],
+    isLoading: !error && !data,
+    error,
+    mutate
+  };
+};
+```
+
+Similar hooks for useMyTasks, useMyCreatedTasks
+
+### 7. REAL-TIME INTEGRATION
+
+In SocketContext or App.tsx:
+```typescript
+useEffect(() => {
+  socket.on('task:updated', (task) => {
+    mutate('/tasks'); // Revalidate SWR cache
+    showToast('Task updated');
+  });
+  
+  socket.on('task:assigned', (task) => {
+    showToast(`You've been assigned: ${task.title}`);
+    mutate('/users/me/tasks');
+  });
+}, []);
+```
+
+### 8. TASK LIST COMPONENT
+
+TasksPage.tsx must include:
+- TaskFilters component (status, priority dropdowns, date sort)
+- Search/filter state management
+- TaskCard grid/list view
+- "Create Task" button opening TaskForm modal
+- Loading skeleton while fetching
+- Empty state when no tasks
+
+TaskCard.tsx:
+- Display title, description (truncated), due date, priority badge, status badge
+- Assigned user avatar/name
+- Edit/Delete buttons
+- Click to open detail modal
+- Color-coded priority: RED (urgent), ORANGE (high), YELLOW (medium), GREEN (low)
+- Overdue indicator if dueDate < now
+
+### 9. TASK FORM
+
+TaskForm.tsx with React Hook Form + Zod:
+- Title input (max 100)
+- Description textarea
+- Due date picker
+- Priority select
+- Status select (for edit mode)
+- Assign to user dropdown (fetch all users)
+- Form validation with error messages
+- Submit button with loading state
+- Cancel button
+
+### 10. DASHBOARD PAGE
+
+DashboardPage.tsx sections:
+1. Statistics cards: Total tasks, Assigned to me, Created by me, Overdue
+2. "My Assigned Tasks" section (grid of TaskCards)
+3. "Tasks I Created" section
+4. "Overdue Tasks" section with red highlighting
+5. Each section with "View All" link
+
+### 11. RESPONSIVE DESIGN
+
+- Mobile-first approach
+- Hamburger menu for mobile navigation
+- Card grid: 1 column mobile, 2 tablet, 3 desktop
+- Forms: Full width mobile, max-width desktop
+- Use Tailwind breakpoints: sm, md, lg, xl
+
+### 12. LOADING STATES
+
+SkeletonLoader.tsx:
+- Animated pulse effect
+- Card skeleton matching TaskCard dimensions
+- Show 6 skeletons while loading
+
+Button component:
+- Disabled state with spinner when loading
+- Use lucide-react Loader2 icon
+
+### 13. UI COMPONENTS
+
+Button.tsx: Primary, secondary, danger variants
+Input.tsx: With label, error message support
+Modal.tsx: Backdrop, close on ESC, focus trap
+Toast.tsx: Success, error, info variants with auto-dismiss
+
+### 14. ROUTING
+
+App.tsx with React Router:
+```typescript
+<Routes>
+  <Route path="/login" element={<LoginPage />} />
+  <Route path="/register" element={<RegisterPage />} />
+  <Route element={<PrivateRoute />}>
+    <Route path="/" element={<DashboardPage />} />
+    <Route path="/tasks" element={<TasksPage />} />
+    <Route path="/profile" element={<ProfilePage />} />
+  </Route>
+</Routes>
+```
+
+### 15. FRONTEND ENV
+
+.env.example:
+VITE_API_URL=http://localhost:5000
+
+## DOCUMENTATION
+
+### README.md must include:
+
+1. **Project Overview**: Brief description
+2. **Tech Stack**: List all technologies
+3. **Features**: Bullet list of implemented features
+4. **Architecture**: 
+   - Backend: Service-Repository pattern explanation
+   - Frontend: Component structure
+   - Real-time: Socket.io integration flow
+5. **Database Choice**: "I chose PostgreSQL because..."
+6. **Setup Instructions**:
+```bash
+   # Backend
+   cd backend
+   npm install
+   npx prisma generate
+   npx prisma migrate dev
+   npm run dev
+   
+   # Frontend
+   cd frontend
+   npm install
+   npm run dev
+```
+7. **Environment Variables**: List all required vars
+8. **API Documentation**:
+   - POST /api/auth/register: Body, Response
+   - POST /api/auth/login: Body, Response
+   - GET /api/tasks: Query params, Response
+   - ... (list all endpoints)
+9. **Socket Events**:
+   - task:updated - When emitted, payload structure
+   - task:assigned - When emitted, payload structure
+10. **Testing**: How to run tests
+11. **Deployment**: Live URLs
+12. **Trade-offs & Assumptions**:
+    - "Used soft delete for tasks to maintain audit trail"
+    - "JWT in HttpOnly cookies for security"
+13. **Future Improvements**: Nice-to-haves
+
+## DEPLOYMENT CONFIGURATION
+
+### Backend (Render/Railway)
+
+render.yaml:
+```yaml
+services:
+  - type: web
+    name: task-manager-api
+    env: node
+    buildCommand: cd backend && npm install && npx prisma generate && npx prisma migrate deploy
+    startCommand: cd backend && npm start
+```
+
+### Frontend (Vercel)
+
+vercel.json:
+```json
+{
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/dist",
+  "framework": "vite"
+}
+```
+
+## TESTING REQUIREMENTS
+
+Write Jest tests in backend/tests/taskService.test.ts:
+```typescript
+describe('TaskService', () => {
+  it('should create task with valid data', async () => {
+    const taskData = {
+      title: 'Test Task',
+      description: 'Test',
+      dueDate: new Date().toISOString(),
+      priority: 'HIGH'
+    };
+    const result = await taskService.createTask(taskData, 'user-id');
+    expect(result).toHaveProperty('id');
+    expect(result.title).toBe('Test Task');
+  });
+  
+  it('should reject task with invalid title', async () => {
+    const taskData = {
+      title: '', // Invalid
+      description: 'Test',
+      dueDate: new Date().toISOString(),
+      priority: 'HIGH'
+    };
+    await expect(taskService.createTask(taskData, 'user-id')).rejects.toThrow();
+  });
+  
+  it('should prevent unauthorized task updates', async () => {
+    // Create task as user1
+    // Try to update as user2
+    // Should throw authorization error
+  });
+});
+```
+
+## CRITICAL REQUIREMENTS CHECKLIST
+
+Ensure ALL of these are implemented:
+
+Backend:
+- [ ] User registration with bcrypt password hashing
+- [ ] JWT authentication with HttpOnly cookies
+- [ ] Full CRUD for tasks with proper authorization
+- [ ] Zod validation on all input DTOs
+- [ ] Service-Repository pattern architecture
+- [ ] Socket.io real-time task updates
+- [ ] Task assignment notifications via Socket
+- [ ] Error handling with proper HTTP codes
+- [ ] 3+ Jest unit tests
+- [ ] Prisma schema with User and Task models
+- [ ] Environment variable configuration
+
+Frontend:
+- [ ] React with TypeScript and Tailwind CSS
+- [ ] SWR for data fetching and caching
+- [ ] Socket.io client for real-time updates
+- [ ] Login/Register forms with React Hook Form
+- [ ] Protected routes with auth context
+- [ ] Task list with filtering (status, priority)
+- [ ] Task list with sorting (due date)
+- [ ] Dashboard with 3 sections (assigned, created, overdue)
+- [ ] Task create/edit modal with validation
+- [ ] Skeleton loading states
+- [ ] Responsive mobile design
+- [ ] Toast notifications
+- [ ] Real-time UI updates when tasks change
+
+Documentation:
+- [ ] Comprehensive README with setup instructions
+- [ ] API endpoint documentation
+- [ ] Architecture explanation
+- [ ] Database choice justification
+- [ ] Socket.io integration explanation
+- [ ] Environment variables documented
+
+Deployment:
+- [ ] Backend deployed to Render/Railway
+- [ ] Frontend deployed to Vercel/Netlify
+- [ ] Database hosted (Render PostgreSQL)
+- [ ] Live URLs accessible and working
+- [ ] CORS properly configured
+
+## IMPLEMENTATION NOTES
+
+1. Start with backend: Database → Auth → Tasks → Socket.io
+2. Test backend endpoints with Thunder Client/Postman before building frontend
+3. Build frontend: Auth → Task List → Dashboard → Real-time
+4. Ensure CORS allows credentials from frontend URL
+5. Test real-time by opening app in 2 browser windows
+6. Write clean, commented TypeScript code
+7. Use meaningful commit messages
+8. Deploy early and test on live URLs
+
+## BONUS IMPLEMENTATIONS (if time allows)
+
+1. **Optimistic Updates**: In SWR, update UI immediately before API call completes
+2. **Audit Log**: Track who updated tasks and when (add updatedBy field)
+3. **Docker**: Create docker-compose.yml with frontend, backend, postgres services
+4. **Task Comments**: Add comments feature with real-time updates
+5. **File Attachments**: Allow attaching files to tasks
+6. **Email Notifications**: Send email when task assigned
+7. **Dark Mode**: Toggle theme with Tailwind dark: classes
+
+BUILD THIS ENTIRE PROJECT IN REPLIT. Ensure all files are created, all dependencies installed, database configured, tests passing, and the application is fully functional before completion.
