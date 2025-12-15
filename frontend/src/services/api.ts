@@ -7,9 +7,9 @@ const getApiUrl = () => {
   }
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
-    return `${window.location.protocol}//${host}:3001/api`;
+    return `${window.location.protocol}//${host}:3000/api`;
   }
-  return 'http://localhost:3001/api';
+  return 'http://localhost:3000/api';
 };
 
 const api = axios.create({

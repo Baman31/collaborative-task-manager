@@ -6,9 +6,9 @@ const getSocketUrl = () => {
   }
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
-    return `${window.location.protocol}//${host}:3001`;
+    return `${window.location.protocol}//${host}:3000`;
   }
-  return 'http://localhost:3001';
+  return 'http://localhost:3000';
 };
 
 const SOCKET_URL = getSocketUrl();

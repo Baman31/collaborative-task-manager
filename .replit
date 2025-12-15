@@ -1,12 +1,12 @@
 entrypoint = "index.js"
-modules = ["nodejs-22"]
+modules = ["nodejs-20", "web"]
 hidden = [".config", "package-lock.json"]
 
 [gitHubImport]
 requiredFiles = [".replit", "replit.nix", "package.json", "package-lock.json"]
 
 [nix]
-channel = "stable-24_11"
+channel = "stable-25_05"
 
 [deployment]
 run = ["node", "index.js"]
@@ -44,13 +44,13 @@ args = "Frontend"
 name = "Backend API"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd backend && npm run dev"
-waitForPort = 3001
-
-[workflows.workflow.metadata]
-outputType = "console"
+waitForPort = 3000
 
 [[workflows.workflow]]
 name = "Frontend"
@@ -63,6 +63,10 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
 
 [[ports]]
 localPort = 3001
