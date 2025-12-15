@@ -14,33 +14,42 @@ import { setupSocketHandlers } from './socket/socketHandler.js';
 const app = express();
 const server = http.createServer(app);
 
-const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
-  'http://localhost:5173',
-  'http://localhost:5000',
-];
+const getAllowedOrigins = () => {
+  const origins = [
+    'http://localhost:5000',
+    'http://localhost:5173',
+    'http://127.0.0.1:5000',
+    'http://127.0.0.1:5173',
+  ];
+  if (process.env.FRONTEND_URL) {
+    origins.push(process.env.FRONTEND_URL);
+  }
+  if (process.env.REPLIT_DEV_DOMAIN) {
+    origins.push(`https://${process.env.REPLIT_DEV_DOMAIN}`);
+  }
+  return origins;
+};
 
-const io = new Server(server, {
-  cors: {
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed.split('//')[0] + '//' + allowed.split('//')[1]?.split(':')[0]))) {
-        callback(null, true);
-      } else {
-        callback(null, true);
-      }
-    },
-    credentials: true,
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    const allowedOrigins = getAllowedOrigins();
+    const isAllowed = allowedOrigins.some(allowed => 
+      origin === allowed || origin.endsWith('.replit.dev') || origin.endsWith('.repl.co')
+    );
+    callback(null, isAllowed);
   },
-});
+  credentials: true,
+};
+
+const io = new Server(server, { cors: corsOptions });
 
 app.set('io', io);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    callback(null, true);
-  },
-  credentials: true,
-}));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 

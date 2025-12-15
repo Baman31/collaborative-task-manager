@@ -63,6 +63,35 @@ export const taskRepository = {
     });
   },
 
+  async findAllForUser(filters: TaskFilters = {}, userId: string): Promise<Task[]> {
+    const where: Record<string, unknown> = {
+      OR: [{ creatorId: userId }, { assignedToId: userId }],
+    };
+
+    if (filters.status) {
+      where.status = filters.status as Status;
+    }
+    if (filters.priority) {
+      where.priority = filters.priority as Priority;
+    }
+
+    const orderBy: Record<string, string> = {};
+    if (filters.sortBy) {
+      orderBy[filters.sortBy] = filters.order || 'asc';
+    } else {
+      orderBy.createdAt = 'desc';
+    }
+
+    return prisma.task.findMany({
+      where,
+      orderBy,
+      include: {
+        creator: { select: { id: true, name: true, email: true } },
+        assignedTo: { select: { id: true, name: true, email: true } },
+      },
+    });
+  },
+
   async findByAssignedTo(userId: string): Promise<Task[]> {
     return prisma.task.findMany({
       where: { assignedToId: userId },

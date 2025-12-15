@@ -13,12 +13,10 @@ router.get('/', async (req: AuthenticatedRequest, res: Response, next: NextFunct
     const filters: TaskFilters = {
       status: req.query.status as string | undefined,
       priority: req.query.priority as string | undefined,
-      assignedToId: req.query.assignedToId as string | undefined,
-      creatorId: req.query.creatorId as string | undefined,
       sortBy: req.query.sortBy as string | undefined,
       order: req.query.order as 'asc' | 'desc' | undefined,
     };
-    const tasks = await taskService.getTasks(filters);
+    const tasks = await taskService.getTasks(filters, req.user!.id);
     res.json({ success: true, data: { tasks } });
   } catch (error) {
     next(error);

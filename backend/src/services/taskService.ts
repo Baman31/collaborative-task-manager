@@ -53,14 +53,17 @@ export const taskService = {
     }
   },
 
-  async getTasks(filters: TaskFilters) {
-    return taskRepository.findAll(filters);
+  async getTasks(filters: TaskFilters, userId: string) {
+    return taskRepository.findAllForUser(filters, userId);
   },
 
   async getTaskById(id: string, userId: string) {
     const task = await taskRepository.findById(id);
     if (!task) {
       throw new TaskError('Task not found', 404);
+    }
+    if (task.creatorId !== userId && task.assignedToId !== userId) {
+      throw new TaskError('Not authorized to view this task', 403);
     }
     return task;
   },
