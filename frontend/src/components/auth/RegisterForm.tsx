@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useToast } from '../../hooks/useToast';
+import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 
 const registerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -51,39 +52,68 @@ export const RegisterForm = () => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <Input
-        label="Name"
-        placeholder="Your name"
-        error={errors.name?.message}
-        {...register('name')}
-      />
-      <Input
-        label="Email"
-        type="email"
-        placeholder="you@example.com"
-        error={errors.email?.message}
-        {...register('email')}
-      />
-      <Input
-        label="Password"
-        type="password"
-        placeholder="At least 6 characters"
-        error={errors.password?.message}
-        {...register('password')}
-      />
-      <Input
-        label="Confirm Password"
-        type="password"
-        placeholder="Confirm your password"
-        error={errors.confirmPassword?.message}
-        {...register('confirmPassword')}
-      />
-      <Button type="submit" loading={loading} className="w-full">
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none mt-3">
+          <User className="w-5 h-5" />
+        </div>
+        <Input
+          label="Name"
+          placeholder="Your name"
+          error={errors.name?.message}
+          className="pl-12"
+          autoComplete="name"
+          {...register('name')}
+        />
+      </div>
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none mt-3">
+          <Mail className="w-5 h-5" />
+        </div>
+        <Input
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          error={errors.email?.message}
+          className="pl-12"
+          autoComplete="email"
+          {...register('email')}
+        />
+      </div>
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none mt-3">
+          <Lock className="w-5 h-5" />
+        </div>
+        <Input
+          label="Password"
+          type="password"
+          placeholder="At least 6 characters"
+          error={errors.password?.message}
+          className="pl-12"
+          autoComplete="new-password"
+          {...register('password')}
+        />
+      </div>
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none mt-3">
+          <Lock className="w-5 h-5" />
+        </div>
+        <Input
+          label="Confirm Password"
+          type="password"
+          placeholder="Confirm your password"
+          error={errors.confirmPassword?.message}
+          className="pl-12"
+          autoComplete="new-password"
+          {...register('confirmPassword')}
+        />
+      </div>
+      <Button type="submit" loading={loading} className="w-full mt-6" size="lg">
         Create Account
+        <ArrowRight className="w-5 h-5 ml-2" />
       </Button>
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-500 mt-6">
         Already have an account?{' '}
-        <Link to="/login" className="text-primary hover:underline">
+        <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
           Sign in
         </Link>
       </p>

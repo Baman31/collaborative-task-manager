@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useToast } from '../../hooks/useToast';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -44,27 +45,42 @@ export const LoginForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <Input
-        label="Email"
-        type="email"
-        placeholder="you@example.com"
-        error={errors.email?.message}
-        {...register('email')}
-      />
-      <Input
-        label="Password"
-        type="password"
-        placeholder="Enter your password"
-        error={errors.password?.message}
-        {...register('password')}
-      />
-      <Button type="submit" loading={loading} className="w-full">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none mt-3">
+          <Mail className="w-5 h-5" />
+        </div>
+        <Input
+          label="Email"
+          type="email"
+          placeholder="you@example.com"
+          error={errors.email?.message}
+          className="pl-12"
+          autoComplete="email"
+          {...register('email')}
+        />
+      </div>
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none mt-3">
+          <Lock className="w-5 h-5" />
+        </div>
+        <Input
+          label="Password"
+          type="password"
+          placeholder="Enter your password"
+          error={errors.password?.message}
+          className="pl-12"
+          autoComplete="current-password"
+          {...register('password')}
+        />
+      </div>
+      <Button type="submit" loading={loading} className="w-full mt-6" size="lg">
         Sign In
+        <ArrowRight className="w-5 h-5 ml-2" />
       </Button>
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-500 mt-6">
         Don't have an account?{' '}
-        <Link to="/register" className="text-primary hover:underline">
+        <Link to="/register" className="font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
           Sign up
         </Link>
       </p>
