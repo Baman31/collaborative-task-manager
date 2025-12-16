@@ -15,7 +15,7 @@ const taskSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   dueDate: z.string().min(1, 'Due date is required'),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'COMPLETED']).optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'COMPLETED']),
   assignedToId: z.string().optional(),
 });
 
@@ -108,17 +108,22 @@ export const TaskForm = ({ task, onClose }: TaskFormProps) => {
       />
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
         <textarea
-          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-            errors.description ? 'border-red-500' : 'border-gray-300'
+          className={`w-full px-4 py-3 border-2 rounded-xl bg-gray-50/50 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all duration-200 ${
+            errors.description ? 'border-red-400' : 'border-gray-200 hover:border-gray-300'
           }`}
           rows={3}
           placeholder="Task description"
           {...register('description')}
         />
         {errors.description && (
-          <p className="mt-1 text-sm text-red-500">{errors.description.message}</p>
+          <p className="mt-2 text-sm text-red-500 flex items-center gap-1">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {errors.description.message}
+          </p>
         )}
       </div>
 
@@ -131,9 +136,9 @@ export const TaskForm = ({ task, onClose }: TaskFormProps) => {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Priority</label>
           <select
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50/50 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all duration-200"
             {...register('priority')}
           >
             {(Object.keys(priorityLabel) as Priority[]).map((priority) => (
@@ -144,27 +149,25 @@ export const TaskForm = ({ task, onClose }: TaskFormProps) => {
           </select>
         </div>
 
-        {task && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              {...register('status')}
-            >
-              {(Object.keys(statusLabel) as Status[]).map((status) => (
-                <option key={status} value={status}>
-                  {statusLabel[status]}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+          <select
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50/50 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all duration-200"
+            {...register('status')}
+          >
+            {(Object.keys(statusLabel) as Status[]).map((status) => (
+              <option key={status} value={status}>
+                {statusLabel[status]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Assign To</label>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Assign To</label>
         <select
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50/50 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all duration-200 hover:border-gray-300"
           {...register('assignedToId')}
         >
           <option value="">Unassigned</option>
